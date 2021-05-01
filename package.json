@@ -1,0 +1,23 @@
+{
+    "name": "youtube-playlist-length",
+    "version": "1.0.0",
+    "description": "",
+    "main": "app.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Akbar",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^0.21.1",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "iso8601-duration": "^1.3.0"
+    },
+    "prettier": {
+        "trailingComma": "none",
+        "tabWidth": 4,
+        "singleQuote": true,
+        "semiColons": true
+    }
+}
