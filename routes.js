@@ -14,6 +14,16 @@ const getDuration = async (videoId) => {
     }
 };
 
+const getPlaylistData = async (playlistId, nextPageToken = '') => {
+    const {
+        data
+    } = await server.get(
+        `/playlistItems?playlistId=${playlistId}&key=${process.env.api_key}&part=contentDetails,snippet&fields=items(id,contentDetails(videoId),snippet(title,thumbnails)),nextPageToken&maxResults=50&pageToken=${nextPageToken}`
+    );
+
+    return data;
+}
+
 router.get('/', (_, res) => {
     res.json({ author: 'Akbar' });
 });
@@ -22,17 +32,29 @@ router.get('/:playlistId', async (req, res) => {
     const { playlistId } = req.params;
 
     try {
-        const {
-            data: { items }
-        } = await server.get(
-            `/playlistItems?playlistId=${playlistId}&key=${process.env.api_key}&part=contentDetails,snippet&fields=items(id,contentDetails(videoId),snippet(title, thumbnails(standard)))&maxResults=50`
-        );
+        let playlistItems = [];
+        let nextPageExisted = false;
+        let data = await getPlaylistData(playlistId);
 
+        if (data.nextPageToken) nextPageExisted = true;
+
+        let { items } = data;
+        playlistItems.push.apply(playlistItems, items);
+
+        while (nextPageExisted) {
+            data = await getPlaylistData(playlistId, data.nextPageToken);
+            playlistItems.push.apply(playlistItems, data.items);
+
+            if (!data.nextPageToken) nextPageExisted = false;
+        }
+        
         let playlistData = await Promise.all(
-            items.map(async (video) => {
+            playlistItems.map(async (video) => {
+                let { thumbnails } = video.snippet;
+                let thumbnailsQuality = thumbnails.standard || thumbnails.high || thumbnails.maxres;
                 return {
                     title: video.snippet.title,
-                    img: video.snippet.thumbnails.standard.url,
+                    img: thumbnailsQuality.url,
                     duration: await getDuration(video.contentDetails.videoId)
                 };
             })
@@ -43,6 +65,7 @@ router.get('/:playlistId', async (req, res) => {
 
         res.status(200).json({
             playlistData,
+            totalVideos: playlistItems.length,
             totalDuration
         });
     } catch (error) {
