@@ -34,6 +34,7 @@ router.get('/:playlistId', async (req, res) => {
     try {
         let playlistItems = [];
         let nextPageExisted = false;
+        const { data: { items: [{ snippet: playlistDetail }] }} = await server.get(`/playlists?id=${playlistId}&key=${process.env.api_key}&part=snippet&fields=items(snippet(title,channelTitle))`)
         let data = await getPlaylistData(playlistId);
 
         if (data.nextPageToken) nextPageExisted = true;
@@ -64,6 +65,7 @@ router.get('/:playlistId', async (req, res) => {
         const totalDuration = durationFormatter(totalDurationIsSeconds);
 
         res.status(200).json({
+            playlistDetail,
             playlistData,
             totalVideos: playlistItems.length,
             totalDuration
