@@ -14,15 +14,20 @@ const getDuration = async (videoId) => {
     }
 };
 
+const getPlaylistDetails = async (playlistId) => {
+    const { data } = await server.get(
+        `/playlists?id=${playlistId}&key=${process.env.api_key}&part=snippet&fields=items(snippet(title,channelTitle))`
+    );
+    return data;
+};
+
 const getPlaylistData = async (playlistId, nextPageToken = '') => {
-    const {
-        data
-    } = await server.get(
+    const { data } = await server.get(
         `/playlistItems?playlistId=${playlistId}&key=${process.env.api_key}&part=contentDetails,snippet&fields=items(id,contentDetails(videoId),snippet(title,thumbnails)),nextPageToken&maxResults=50&pageToken=${nextPageToken}`
     );
 
     return data;
-}
+};
 
 router.get('/', (_, res) => {
     res.json({ author: 'Akbar' });
@@ -34,7 +39,9 @@ router.get('/:playlistId', async (req, res) => {
     try {
         let playlistItems = [];
         let nextPageExisted = false;
-        const { data: { items: [{ snippet: playlistDetail }] }} = await server.get(`/playlists?id=${playlistId}&key=${process.env.api_key}&part=snippet&fields=items(snippet(title,channelTitle))`)
+        const {
+            items: [{ snippet: playlistDetail }]
+        } = await getPlaylistDetails(playlistId);
         let data = await getPlaylistData(playlistId);
 
         if (data.nextPageToken) nextPageExisted = true;
@@ -48,7 +55,7 @@ router.get('/:playlistId', async (req, res) => {
 
             if (!data.nextPageToken) nextPageExisted = false;
         }
-        
+
         let playlistData = await Promise.all(
             playlistItems.map(async (video) => {
                 let { thumbnails } = video.snippet;
